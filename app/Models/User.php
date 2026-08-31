@@ -29,4 +29,23 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    // Get the workspace that owns the user
+    public function workspace()
+    {
+        return $this->belongsTo(Workspace::class);
+    }
+
+    // Get the tickets created by the user
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
+    }
+
+    // Get the messages sent by the user
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
+
 }
