@@ -13,10 +13,14 @@ return new class extends Migration
     {
         Schema::create('tickets', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('workspace_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('subject');
+            $table->string('status')->default('open');
             $table->timestamps();
         });
     }
-
+    
     /**
      * Reverse the migrations.
      */
