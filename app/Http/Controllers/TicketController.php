@@ -39,4 +39,17 @@ class TicketController extends Controller
 
         return back()->with('success', 'Message sent successfully.');
     }
+
+    public function show(Ticket $ticket)
+    {
+        // Load all messages for this ticket
+        $ticket->load('messages');
+
+        // Send data to the React view via Inertia
+        return inertia('Tickets/Show', [
+            'ticket' => $ticket,
+            'messages' => $ticket->messages
+        ]);
+    }
+
 }
