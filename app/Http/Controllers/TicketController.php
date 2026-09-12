@@ -45,11 +45,12 @@ class TicketController extends Controller
             'content' => 'You are a helpful and professional IT support assistant.'
         ]);
 
-        // 3. Call Groq API using keys from .env
+        // 3. Call Groq API with specific max_tokens to prevent 429 Rate Limit error
         $response = Http::withToken(env('GROQ_API_KEY'))
             ->post('https://api.groq.com/openai/v1/chat/completions', [
-                'model' => env('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+                'model' => 'qwen/qwen3.8-27b', 
                 'messages' => $conversation,
+                'max_tokens' => 800, // <--- This line prevents the rate limit error
             ]);
 
         // 4. Save the AI's response if successful
