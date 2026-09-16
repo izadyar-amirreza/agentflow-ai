@@ -22,15 +22,15 @@ export default function Show({ auth, ticket, messages }) {
         e.preventDefault();
         
         post(route('tickets.messages.store', ticket.id), {
-            preserveScroll: true, // Prevents page from jumping to top
+            preserveScroll: true,
             onStart: () => {
-                setIsTyping(true); // Show typing animation
+                setIsTyping(true);
             },
             onSuccess: () => {
-                reset('body'); // Clear the input field
+                reset('body');
             },
             onFinish: () => {
-                setIsTyping(false); // Hide typing animation
+                setIsTyping(false);
             }
         });
     };
@@ -47,40 +47,41 @@ export default function Show({ auth, ticket, messages }) {
                     <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg flex flex-col h-[600px]">
                             
-                           <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
+                            <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
                                 {messages.length === 0 ? (
                                     <p className="text-center text-gray-400 mt-20">No messages yet. Start the conversation...</p>
                                 ) : (
                                     messages.map((message) => (
                                         <div key={message.id} className={`mb-4 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                            {/* Increased max-width to 85% to give code blocks more space */}
                                             <div className={`max-w-[85%] px-4 py-3 rounded-lg ${message.role === 'user' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-gray-200 text-gray-800 rounded-bl-none'}`}>
                                                 
-                                                <ReactMarkdown
-                                                    remarkPlugins={[remarkGfm]}
-                                                    className="text-sm space-y-2 leading-relaxed"
-                                                    components={{
-                                                        // Style links
-                                                        a: ({node, ...props}) => <a className="underline font-semibold hover:opacity-80" target="_blank" rel="noopener noreferrer" {...props} />,
-                                                        // Style bold text
-                                                        strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
-                                                        // Style lists
-                                                        ul: ({node, ...props}) => <ul className="list-disc list-inside" {...props} />,
-                                                        ol: ({node, ...props}) => <ol className="list-decimal list-inside" {...props} />,
-                                                        // Style code blocks (inline and multiline)
-                                                        code: ({node, inline, children, ...props}) => (
-                                                            inline ? (
-                                                                <code className="bg-black/10 px-1.5 py-0.5 rounded font-mono text-xs" {...props}>{children}</code>
-                                                            ) : (
-                                                                <div className="bg-gray-800 text-gray-200 p-3 rounded-md overflow-x-auto my-2 text-left w-full" dir="ltr">
-                                                                    <code className="font-mono text-sm" {...props}>{children}</code>
-                                                                </div>
-                                                            )
-                                                        )
-                                                    }}
-                                                >
-                                                    {message.body}
-                                                </ReactMarkdown>
+                                                {/* Wrapper div applied here to fix the version 9 className error */}
+                                                <div className="text-sm space-y-2 leading-relaxed">
+                                                    <ReactMarkdown
+                                                        remarkPlugins={[remarkGfm]}
+                                                        components={{
+                                                            a: ({node, ...props}) => <a className="underline font-semibold hover:opacity-80" target="_blank" rel="noopener noreferrer" {...props} />,
+                                                            strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
+                                                            ul: ({node, ...props}) => <ul className="list-disc list-inside my-2" {...props} />,
+                                                            ol: ({node, ...props}) => <ol className="list-decimal list-inside my-2" {...props} />,
+                                                            // Updated code block detection for react-markdown v9
+                                                            code: ({node, className, children, ...props}) => {
+                                                                const match = /language-(\w+)/.exec(className || '');
+                                                                const isBlock = match || String(children).includes('\n');
+                                                                
+                                                                return !isBlock ? (
+                                                                    <code className="bg-black/10 px-1.5 py-0.5 rounded font-mono text-xs" {...props}>{children}</code>
+                                                                ) : (
+                                                                    <div className="bg-gray-800 text-gray-200 p-3 rounded-md overflow-x-auto my-2 text-left w-full" dir="ltr">
+                                                                        <code className="font-mono text-sm" {...props}>{children}</code>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                        }}
+                                                    >
+                                                        {message.body}
+                                                    </ReactMarkdown>
+                                                </div>
 
                                             </div>
                                         </div>
@@ -88,7 +89,8 @@ export default function Show({ auth, ticket, messages }) {
                                 )}
                                 <div ref={messagesEndRef} />
                             </div>
-                            {/* AI Typing Indicator - Rendered only when isTyping is true */}
+                            
+                            {/* AI Typing Indicator */}
                             {isTyping && (
                                 <div className="flex justify-start mb-4 px-6">
                                     <div className="bg-gray-700 text-gray-200 rounded-lg px-4 py-3 shadow-sm flex items-center gap-1">
@@ -98,6 +100,7 @@ export default function Show({ auth, ticket, messages }) {
                                     </div>
                                 </div>
                             )}
+                            
                             <div className="border-t p-4 bg-white">
                                 <form onSubmit={submit} className="flex gap-2">
                                     <input
