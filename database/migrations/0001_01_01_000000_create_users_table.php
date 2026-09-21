@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            // اتصال کاربر به فضای کاری (Workspace)
+            // User connect to workspace
             $table->foreignId('workspace_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('email')->unique();

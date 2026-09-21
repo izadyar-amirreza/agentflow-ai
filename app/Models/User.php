@@ -10,7 +10,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
+// 1. Add 'role' to the Fillable array
+#[Fillable(['name', 'email', 'password', 'role'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -48,4 +49,9 @@ class User extends Authenticatable
         return $this->hasMany(Message::class);
     }
 
+    // 2. Helper method to check if the user is an admin
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
 }
