@@ -30,6 +30,9 @@ export default function AuthenticatedLayout({ header, children }) {
                                 >
                                     Dashboard
                                 </NavLink>
+                                <NavLink href={route('tickets.index')} active={route().current('tickets.*')}>
+                                    My Tickets
+                                </NavLink>
                                 {user.role === 'admin' && (
                                 <NavLink href={route('admin.tickets.index')} active={route().current('admin.tickets.*')}>
                                     Admin Panel
@@ -138,6 +141,9 @@ export default function AuthenticatedLayout({ header, children }) {
                             active={route().current('dashboard')}
                         >
                             Dashboard
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('tickets.index')} active={route().current('tickets.*')}>
+                            My Tickets
                         </ResponsiveNavLink>
                         {user.role === 'admin' && (
                         <ResponsiveNavLink href={route('admin.tickets.index')} active={route().current('admin.tickets.*')}>

@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Ticket extends Model
 {
+       protected $guarded = [];
+
     // Get the workspace that owns the ticket
     public function workspace()
     {
