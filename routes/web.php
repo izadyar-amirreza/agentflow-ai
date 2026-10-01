@@ -30,14 +30,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index'); // این خط اضافه شد
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
     Route::post('/tickets/{ticket}/messages', [TicketController::class, 'storeMessage'])->name('tickets.messages.store');
-
-    // Shortcut for quick ticket creation testing
-    Route::get('/create-test-ticket', function () {
-        $ticket = auth()->user()->tickets()->create([
-            'subject' => 'Test Ticket Issue' 
-       ]);
-        return redirect()->route('tickets.show', $ticket);
-    });
 });
 
 // Admin Routes (Protected by 'auth' and 'admin' middleware)

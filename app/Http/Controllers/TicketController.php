@@ -8,13 +8,27 @@ use Illuminate\Support\Facades\Http;
 
 class TicketController extends Controller
 {
-    
     public function index()
     {
         // Sends the user's list of tickets to the frontend 
         return inertia('Tickets/Index', [
             'tickets' => auth()->user()->tickets()->latest()->get()
         ]);
+    }
+
+    // ADDED: Method to handle the creation of a new ticket from the UI form
+    public function store(Request $request)
+    {
+        // Validate the ticket subject
+        $request->validate(['subject' => 'required|string|max:255']);
+        
+        // Create the new ticket in the database
+        $ticket = auth()->user()->tickets()->create([
+            'subject' => $request->subject,
+        ]);
+
+        // Redirect the user to the chat page of the newly created ticket
+        return redirect()->route('tickets.show', $ticket);
     }
 
     public function show(Ticket $ticket)
@@ -68,8 +82,8 @@ class TicketController extends Controller
         // 4. Send the request to the Groq API
         $response = Http::withToken(env('GROQ_API_KEY'))
             ->post('https://api.groq.com/openai/v1/chat/completions', [
-                // Use the model defined in the .env file
-                'model' => env('GROQ_MODEL', 'llama-3.3-70b-versatile'), 
+                // Updated default model to the working Qwen model
+                'model' => env('GROQ_MODEL', 'qwen/qwen3.8-27b'), 
                 'messages' => $conversation,
                 'max_tokens' => 800,
             ]);
