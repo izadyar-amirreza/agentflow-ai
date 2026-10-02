@@ -28,7 +28,7 @@ Route::middleware('auth')->group(function () {
 
     // Ticket and Chat routes (User Side)
     Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
-    Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store'); // اضافه شد: برای ثبت تیکت جدید
+    Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store'); 
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
     Route::post('/tickets/{ticket}/messages', [TicketController::class, 'storeMessage'])->name('tickets.messages.store');
 });
@@ -42,6 +42,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // Added: Admin paths for accessing tickets and sending blocking messages
     Route::get('/tickets/{ticket}', [AdminTicketController::class, 'show'])->name('tickets.show');
     Route::post('/tickets/{ticket}/messages', [AdminTicketController::class, 'storeMessage'])->name('tickets.messages.store');
+    // New route for closing a ticket by the admin
+    Route::post('/tickets/{ticket}/close', [AdminTicketController::class, 'close'])->name('tickets.close');
     
 });
 

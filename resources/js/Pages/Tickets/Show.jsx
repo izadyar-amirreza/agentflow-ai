@@ -102,24 +102,30 @@ export default function Show({ auth, ticket, messages }) {
                             )}
                             
                             <div className="border-t p-4 bg-white">
-                                <form onSubmit={submit} className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={data.body}
-                                        onChange={(e) => setData('body', e.target.value)}
-                                        placeholder={isTyping ? "AI is thinking..." : "Type your message..."}
-                                        className="flex-1 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                                        disabled={processing || isTyping}
-                                        autoComplete="off"
-                                    />
-                                    <button
-                                        type="submit"
-                                        disabled={processing || isTyping || !data.body.trim()}
-                                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        {isTyping ? 'Thinking...' : 'Send'}
-                                    </button>
-                                </form>
+                                {ticket.status === 'closed' ? (
+                                    <div className="text-center text-red-500 p-3 bg-red-50 rounded-lg font-medium">
+                                        This ticket has been closed by an administrator.
+                                    </div>
+                                ) : (
+                                    <form onSubmit={submit} className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={data.body}
+                                            onChange={(e) => setData('body', e.target.value)}
+                                            placeholder={isTyping ? "AI is thinking..." : "Type your message..."}
+                                            className="flex-1 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                                            disabled={processing || isTyping}
+                                            autoComplete="off"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={processing || isTyping || !data.body.trim()}
+                                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            {isTyping ? 'Thinking...' : 'Send'}
+                                        </button>
+                                    </form>
+                                )}
                             </div>
 
                         </div>

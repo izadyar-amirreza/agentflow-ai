@@ -58,4 +58,18 @@ class TicketController extends Controller
 
         return back();
     }
+
+    public function close(Ticket $ticket)
+    {
+        if (!auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        $ticket->update([
+            'status' => 'closed'
+        ]);
+
+        return back();
+    }
+
 }

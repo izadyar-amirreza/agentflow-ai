@@ -25,6 +25,7 @@ class TicketController extends Controller
         // Create the new ticket in the database
         $ticket = auth()->user()->tickets()->create([
             'subject' => $request->subject,
+            'status' => 'open',
         ]);
 
         // Redirect the user to the chat page of the newly created ticket

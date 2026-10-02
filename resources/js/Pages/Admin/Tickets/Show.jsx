@@ -9,6 +9,12 @@ export default function Show({ auth, ticket, messages }) {
         body: '',
     });
 
+    const closeTicket = () => {
+        if (confirm('Are you sure you want to close this ticket?')) {
+            post(route('admin.tickets.close', ticket.id));
+        }
+    };
+
     const messagesEndRef = useRef(null);
 
     useEffect(() => {
@@ -31,15 +37,32 @@ export default function Show({ auth, ticket, messages }) {
                 user={auth.user}
                 header={
                     <div className="flex justify-between items-center">
-                        <h2 className="font-semibold text-xl text-gray-200 leading-tight">
-                            Viewing Ticket: {ticket.subject}
-                        </h2>
-                        <Link 
-                            href={route('admin.tickets.index')} 
-                            className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm transition"
-                        >
-                            Back to List
-                        </Link>
+                        <div className="flex items-center gap-4">
+                            <h2 className="font-semibold text-xl text-gray-200 leading-tight">
+                                Viewing Ticket: {ticket.subject}
+                            </h2>
+                            <span className={`px-2 py-1 text-xs rounded-full font-bold uppercase ${
+                                ticket.status === 'closed' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                            }`}>
+                                {ticket.status}
+                            </span>
+                        </div>
+                        <div className="flex gap-2">
+                            {ticket.status !== 'closed' && (
+                                <button 
+                                    onClick={closeTicket}
+                                    className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded text-sm transition"
+                                >
+                                    Close Ticket
+                                </button>
+                            )}
+                            <Link 
+                                href={route('admin.tickets.index')} 
+                                className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm transition"
+                            >
+                                Back to List
+                            </Link>
+                        </div>
                     </div>
                 }
             >
@@ -102,24 +125,30 @@ export default function Show({ auth, ticket, messages }) {
                             </div>
                             
                             <div className="border-t border-gray-700 p-4 bg-gray-900">
-                                <form onSubmit={submit} className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={data.body}
-                                        onChange={(e) => setData('body', e.target.value)}
-                                        placeholder="Type your admin reply to take over..."
-                                        className="flex-1 bg-gray-800 border-gray-700 text-white rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500"
-                                        disabled={processing}
-                                        autoComplete="off"
-                                    />
-                                    <button
-                                        type="submit"
-                                        disabled={processing || !data.body.trim()}
-                                        className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-                                    >
-                                        Send & Take Over
-                                    </button>
-                                </form>
+                                {ticket.status === 'closed' ? (
+                                    <div className="text-center text-red-400 p-2 bg-red-900/30 rounded-lg">
+                                        This ticket is closed. You can no longer send messages.
+                                    </div>
+                                ) : (
+                                    <form onSubmit={submit} className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={data.body}
+                                            onChange={(e) => setData('body', e.target.value)}
+                                            placeholder="Type your admin reply to take over..."
+                                            className="flex-1 bg-gray-800 border-gray-700 text-white rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500"
+                                            disabled={processing}
+                                            autoComplete="off"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={processing || !data.body.trim()}
+                                            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                                        >
+                                            Send & Take Over
+                                        </button>
+                                    </form>
+                                )}
                             </div>
 
                         </div>
