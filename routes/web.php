@@ -26,17 +26,22 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Ticket and Chat routes
-    Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index'); // این خط اضافه شد
+    // Ticket and Chat routes (User Side)
+    Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+    Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store'); // اضافه شد: برای ثبت تیکت جدید
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
     Route::post('/tickets/{ticket}/messages', [TicketController::class, 'storeMessage'])->name('tickets.messages.store');
 });
 
-// Admin Routes (Protected by 'auth' and 'admin' middleware)
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+// Admin Routes (Protected by 'auth', authorization happens in the controller)
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     
     // Path to list all tickets for the administrator
     Route::get('/tickets', [AdminTicketController::class, 'index'])->name('tickets.index');
+    
+    // Added: Admin paths for accessing tickets and sending blocking messages
+    Route::get('/tickets/{ticket}', [AdminTicketController::class, 'show'])->name('tickets.show');
+    Route::post('/tickets/{ticket}/messages', [AdminTicketController::class, 'storeMessage'])->name('tickets.messages.store');
     
 });
 
