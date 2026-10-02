@@ -19,6 +19,7 @@ class Message extends Model
         'user_id',
         'body',
         'role',
+        'attachment',
     ];
 
     /**
