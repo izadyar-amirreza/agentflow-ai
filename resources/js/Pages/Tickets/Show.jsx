@@ -5,36 +5,54 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 export default function Show({ auth, ticket, messages }) {
-    // Added 'attachment' field to the form state
     const { data, setData, post, processing, reset } = useForm({
         body: '',
         attachment: null,
     });
 
     const messagesEndRef = useRef(null);
-
-    // State to track AI response status
     const [isTyping, setIsTyping] = useState(false);
+    
+    // Real-time state for messages
+    const [localMessages, setLocalMessages] = useState(messages);
+
+    // Sync local state if Inertia passes new props
+    useEffect(() => {
+        setLocalMessages(messages);
+    }, [messages]);
+
+    // Real-time Echo Listener
+    useEffect(() => {
+        const channel = window.Echo.private(`ticket.${ticket.id}`);
+
+        channel.listen('MessageSent', (e) => {
+            setLocalMessages((prev) => {
+                // Prevent duplicate messages
+                if (prev.find((m) => m.id === e.message.id)) {
+                    return prev;
+                }
+                return [...prev, e.message];
+            });
+            // Stop typing indicator when a reply arrives
+            setIsTyping(false);
+        });
+
+        return () => {
+            window.Echo.leave(`ticket.${ticket.id}`);
+        };
+    }, [ticket.id]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+    }, [localMessages]); // Scroll on new local message
 
     const submit = (e) => {
         e.preventDefault();
         
         post(route('tickets.messages.store', ticket.id), {
             preserveScroll: true,
-            onStart: () => {
-                setIsTyping(true);
-            },
-            onSuccess: () => {
-                // Reset the entire form (both body and attachment) upon success
-                reset();
-            },
-            onFinish: () => {
-                setIsTyping(false);
-            }
+            onStart: () => setIsTyping(true),
+            onSuccess: () => reset(),
         });
     };
 
@@ -51,10 +69,10 @@ export default function Show({ auth, ticket, messages }) {
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg flex flex-col h-[600px]">
                             
                             <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
-                                {messages.length === 0 ? (
+                                {localMessages.length === 0 ? (
                                     <p className="text-center text-gray-400 mt-20">No messages yet. Start the conversation...</p>
                                 ) : (
-                                    messages.map((message) => (
+                                    localMessages.map((message) => (
                                         <div key={message.id} className={`mb-4 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                             <div className={`max-w-[85%] px-4 py-3 rounded-lg ${message.role === 'user' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-gray-200 text-gray-800 rounded-bl-none'}`}>
                                                 
@@ -69,7 +87,6 @@ export default function Show({ auth, ticket, messages }) {
                                                             code: ({node, className, children, ...props}) => {
                                                                 const match = /language-(\w+)/.exec(className || '');
                                                                 const isBlock = match || String(children).includes('\n');
-                                                                
                                                                 return !isBlock ? (
                                                                     <code className="bg-black/10 px-1.5 py-0.5 rounded font-mono text-xs" {...props}>{children}</code>
                                                                 ) : (
@@ -84,7 +101,6 @@ export default function Show({ auth, ticket, messages }) {
                                                     </ReactMarkdown>
                                                 </div>
 
-                                                {/* Render the attachment if it exists */}
                                                 {message.attachment && (
                                                     <div className="mt-3 border-t border-gray-400/30 pt-2">
                                                         {message.attachment.match(/\.(jpeg|jpg|gif|png)$/i) ? (
@@ -106,7 +122,6 @@ export default function Show({ auth, ticket, messages }) {
                                 <div ref={messagesEndRef} />
                             </div>
                             
-                            {/* AI Typing Indicator */}
                             {isTyping && (
                                 <div className="flex justify-start mb-4 px-6">
                                     <div className="bg-gray-700 text-gray-200 rounded-lg px-4 py-3 shadow-sm flex items-center gap-1">
@@ -124,7 +139,6 @@ export default function Show({ auth, ticket, messages }) {
                                     </div>
                                 ) : (
                                     <form onSubmit={submit} className="flex gap-2 items-center">
-                                        {/* File Input for Attachments */}
                                         <input
                                             type="file"
                                             onChange={(e) => setData('attachment', e.target.files[0])}

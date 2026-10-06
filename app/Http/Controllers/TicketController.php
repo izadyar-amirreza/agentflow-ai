@@ -46,24 +46,24 @@ class TicketController extends Controller
     {
         $request->validate([
             'body' => 'required|string|max:2000',
-            // Added file validation (Max 5MB)
             'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf,txt,log,zip,rar|max:5120',
         ]);
 
-        // Save the file if it exists
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
-            // The file will be stored in the storage/app/public/attachments directory
             $attachmentPath = $request->file('attachment')->store('attachments', 'public');
         }
 
-        // 1. Save the message (including the attachment path)
-        $ticket->messages()->create([
+        // 1. Save the message and store it in $msg variable
+        $msg = $ticket->messages()->create([
             'user_id' => auth()->id(),
             'body' => $request->body,
             'role' => auth()->user()->isAdmin() ? 'assistant' : 'user',
             'attachment' => $attachmentPath,
         ]);
+
+        // Dispatch the real-time event for user message
+        event(new \App\Events\MessageSent($msg));
 
         // 2. Check for Human Takeover
         $adminHasReplied = $ticket->messages()->whereHas('user', function ($query) {
@@ -75,10 +75,10 @@ class TicketController extends Controller
         }
 
         // 3. Prepare the conversation history for the AI
-        $conversation = $ticket->messages()->orderBy('created_at', 'asc')->get()->map(function ($msg) {
+        $conversation = $ticket->messages()->orderBy('created_at', 'asc')->get()->map(function ($m) {
             return [
-                'role' => $msg->role,
-                'content' => $msg->body,
+                'role' => $m->role,
+                'content' => $m->body,
             ];
         })->toArray();
 
@@ -88,7 +88,7 @@ class TicketController extends Controller
         ]);
 
         // 4. Send the request to the Groq API
-        $response = Http::withToken(env('GROQ_API_KEY'))
+        $response = \Illuminate\Support\Facades\Http::withToken(env('GROQ_API_KEY'))
             ->post('https://api.groq.com/openai/v1/chat/completions', [
                 'model' => env('GROQ_MODEL', 'qwen/qwen3.8-27b'), 
                 'messages' => $conversation,
@@ -99,11 +99,14 @@ class TicketController extends Controller
         if ($response->successful()) {
             $aiText = $response->json('choices.0.message.content');
             
-            $ticket->messages()->create([
+            $aiMsg = $ticket->messages()->create([
                 'user_id' => null,
                 'body' => $aiText,
                 'role' => 'assistant',
             ]);
+
+            // Dispatch the real-time event for AI message
+            event(new \App\Events\MessageSent($aiMsg));
         }
 
         return back();

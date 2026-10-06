@@ -1,6 +1,6 @@
 import { useForm, Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { useEffect, useRef } from 'react'; 
+import { useState, useEffect, useRef } from 'react'; 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -10,23 +10,49 @@ export default function Show({ auth, ticket, messages }) {
         attachment: null,
     });
 
+    const messagesEndRef = useRef(null);
+    
+    // Real-time state for messages
+    const [localMessages, setLocalMessages] = useState(messages);
+
+    // Sync local state if Inertia passes new props
+    useEffect(() => {
+        setLocalMessages(messages);
+    }, [messages]);
+
+    // Real-time Echo Listener
+    useEffect(() => {
+        const channel = window.Echo.private(`ticket.${ticket.id}`);
+
+        channel.listen('MessageSent', (e) => {
+            setLocalMessages((prev) => {
+                // Prevent duplicate messages
+                if (prev.find((m) => m.id === e.message.id)) {
+                    return prev;
+                }
+                return [...prev, e.message];
+            });
+        });
+
+        return () => {
+            window.Echo.leave(`ticket.${ticket.id}`);
+        };
+    }, [ticket.id]);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [localMessages]);
+
     const closeTicket = () => {
         if (confirm('Are you sure you want to close this ticket?')) {
             post(route('admin.tickets.close', ticket.id));
         }
     };
 
-    const messagesEndRef = useRef(null);
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
-
     const submit = (e) => {
         e.preventDefault();
         post(route('admin.tickets.messages.store', ticket.id), {
             preserveScroll: true,
-            // Reset the entire form to clear both text and file inputs
             onSuccess: () => reset(),
         });
     };
@@ -71,7 +97,6 @@ export default function Show({ auth, ticket, messages }) {
                 <div className="py-12">
                     <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
                         
-                        {/* Admin Alert Banner */}
                         <div className="mb-4 bg-red-900/50 border border-red-500/50 p-4 rounded-lg flex items-center gap-3">
                             <span className="flex-shrink-0 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
                             <p className="text-red-200 text-sm">
@@ -82,10 +107,10 @@ export default function Show({ auth, ticket, messages }) {
                         <div className="bg-gray-900 border border-gray-700 overflow-hidden shadow-sm sm:rounded-lg flex flex-col h-[600px]">
                             
                             <div className="flex-1 p-6 overflow-y-auto bg-gray-800">
-                                {messages.length === 0 ? (
+                                {localMessages.length === 0 ? (
                                     <p className="text-center text-gray-500 mt-20">No messages yet.</p>
                                 ) : (
-                                    messages.map((message) => (
+                                    localMessages.map((message) => (
                                         <div key={message.id} className={`mb-4 flex ${message.role === 'user' ? 'justify-start' : 'justify-end'}`}>
                                             <div className={`max-w-[85%] px-4 py-3 rounded-lg ${
                                                 message.role === 'user' 
@@ -120,7 +145,6 @@ export default function Show({ auth, ticket, messages }) {
                                                     </ReactMarkdown>
                                                 </div>
 
-                                                {/* Render the attachment if it exists */}
                                                 {message.attachment && (
                                                     <div className="mt-3 border-t border-gray-600/50 pt-2">
                                                         {message.attachment.match(/\.(jpeg|jpg|gif|png)$/i) ? (
@@ -149,8 +173,6 @@ export default function Show({ auth, ticket, messages }) {
                                     </div>
                                 ) : (
                                     <form onSubmit={submit} className="flex gap-2 items-center">
-                                        
-                                        {/* File Input for Attachments (Styled for Dark Mode) */}
                                         <input
                                             type="file"
                                             onChange={(e) => setData('attachment', e.target.files[0])}

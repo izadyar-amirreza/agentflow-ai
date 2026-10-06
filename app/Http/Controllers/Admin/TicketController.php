@@ -54,12 +54,16 @@ class TicketController extends Controller
             $attachmentPath = $request->file('attachment')->store('attachments', 'public');
         }
 
-        $ticket->messages()->create([
+        // Save admin message and store it in $msg variable
+        $msg = $ticket->messages()->create([
             'user_id' => auth()->id(),
             'body' => $request->body,
             'role' => 'assistant',
-            'attachment' => $attachmentPath, // ذخیره مسیر فایل
+            'attachment' => $attachmentPath,
         ]);
+
+        // Dispatch the real-time event for admin message
+        event(new \App\Events\MessageSent($msg));
 
         return back();
     }
