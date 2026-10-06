@@ -46,14 +46,19 @@ class TicketController extends Controller
 
         $request->validate([
             'body' => 'required|string|max:2000',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf,txt,log,zip,rar|max:5120',
         ]);
 
-        // Save the admin's reply. We do not trigger the AI here.
-        // Setting role as 'assistant' aligns with your current UI logic.
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store('attachments', 'public');
+        }
+
         $ticket->messages()->create([
             'user_id' => auth()->id(),
             'body' => $request->body,
             'role' => 'assistant',
+            'attachment' => $attachmentPath, // ذخیره مسیر فایل
         ]);
 
         return back();

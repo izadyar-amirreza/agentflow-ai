@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm';
 export default function Show({ auth, ticket, messages }) {
     const { data, setData, post, processing, reset } = useForm({
         body: '',
+        attachment: null,
     });
 
     const closeTicket = () => {
@@ -25,7 +26,8 @@ export default function Show({ auth, ticket, messages }) {
         e.preventDefault();
         post(route('admin.tickets.messages.store', ticket.id), {
             preserveScroll: true,
-            onSuccess: () => reset('body'),
+            // Reset the entire form to clear both text and file inputs
+            onSuccess: () => reset(),
         });
     };
 
@@ -117,6 +119,22 @@ export default function Show({ auth, ticket, messages }) {
                                                         {message.body}
                                                     </ReactMarkdown>
                                                 </div>
+
+                                                {/* Render the attachment if it exists */}
+                                                {message.attachment && (
+                                                    <div className="mt-3 border-t border-gray-600/50 pt-2">
+                                                        {message.attachment.match(/\.(jpeg|jpg|gif|png)$/i) ? (
+                                                            <a href={`/storage/${message.attachment}`} target="_blank" rel="noreferrer">
+                                                                <img src={`/storage/${message.attachment}`} alt="attachment" className="max-w-[200px] rounded-md shadow-sm hover:opacity-90" />
+                                                            </a>
+                                                        ) : (
+                                                            <a href={`/storage/${message.attachment}`} target="_blank" rel="noreferrer" className="text-sm text-blue-300 underline flex items-center gap-1 font-bold">
+                                                                📎 Download Attachment
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                )}
+
                                             </div>
                                         </div>
                                     ))
@@ -130,7 +148,16 @@ export default function Show({ auth, ticket, messages }) {
                                         This ticket is closed. You can no longer send messages.
                                     </div>
                                 ) : (
-                                    <form onSubmit={submit} className="flex gap-2">
+                                    <form onSubmit={submit} className="flex gap-2 items-center">
+                                        
+                                        {/* File Input for Attachments (Styled for Dark Mode) */}
+                                        <input
+                                            type="file"
+                                            onChange={(e) => setData('attachment', e.target.files[0])}
+                                            className="text-sm text-gray-400 file:mr-2 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-gray-200 hover:file:bg-gray-600 max-w-[220px]"
+                                            disabled={processing}
+                                        />
+
                                         <input
                                             type="text"
                                             value={data.body}

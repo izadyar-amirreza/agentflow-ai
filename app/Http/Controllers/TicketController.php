@@ -46,24 +46,32 @@ class TicketController extends Controller
     {
         $request->validate([
             'body' => 'required|string|max:2000',
+            // Added file validation (Max 5MB)
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf,txt,log,zip,rar|max:5120',
         ]);
 
-        // 1. Save the message
-        // If the sender is an admin, set their role as 'assistant' to maintain system consistency
+        // Save the file if it exists
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            // The file will be stored in the storage/app/public/attachments directory
+            $attachmentPath = $request->file('attachment')->store('attachments', 'public');
+        }
+
+        // 1. Save the message (including the attachment path)
         $ticket->messages()->create([
             'user_id' => auth()->id(),
             'body' => $request->body,
             'role' => auth()->user()->isAdmin() ? 'assistant' : 'user',
+            'attachment' => $attachmentPath,
         ]);
 
         // 2. Check for Human Takeover
-        // If an admin has sent at least one message in this ticket, stop the AI bot
         $adminHasReplied = $ticket->messages()->whereHas('user', function ($query) {
             $query->where('role', 'admin');
         })->exists();
 
         if ($adminHasReplied) {
-            return back(); // Exit the function and do not send a request to the AI
+            return back();
         }
 
         // 3. Prepare the conversation history for the AI
@@ -74,7 +82,6 @@ class TicketController extends Controller
             ];
         })->toArray();
 
-        // Insert the system prompt at the beginning of the array
         array_unshift($conversation, [
             'role' => 'system',
             'content' => 'You are a helpful and professional IT support assistant.'
@@ -83,7 +90,6 @@ class TicketController extends Controller
         // 4. Send the request to the Groq API
         $response = Http::withToken(env('GROQ_API_KEY'))
             ->post('https://api.groq.com/openai/v1/chat/completions', [
-                // Updated default model to the working Qwen model
                 'model' => env('GROQ_MODEL', 'qwen/qwen3.8-27b'), 
                 'messages' => $conversation,
                 'max_tokens' => 800,

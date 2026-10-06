@@ -5,13 +5,15 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 export default function Show({ auth, ticket, messages }) {
+    // Added 'attachment' field to the form state
     const { data, setData, post, processing, reset } = useForm({
         body: '',
+        attachment: null,
     });
 
     const messagesEndRef = useRef(null);
 
-    // Add this state to track AI response status
+    // State to track AI response status
     const [isTyping, setIsTyping] = useState(false);
 
     useEffect(() => {
@@ -27,7 +29,8 @@ export default function Show({ auth, ticket, messages }) {
                 setIsTyping(true);
             },
             onSuccess: () => {
-                reset('body');
+                // Reset the entire form (both body and attachment) upon success
+                reset();
             },
             onFinish: () => {
                 setIsTyping(false);
@@ -55,7 +58,6 @@ export default function Show({ auth, ticket, messages }) {
                                         <div key={message.id} className={`mb-4 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                             <div className={`max-w-[85%] px-4 py-3 rounded-lg ${message.role === 'user' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-gray-200 text-gray-800 rounded-bl-none'}`}>
                                                 
-                                                {/* Wrapper div applied here to fix the version 9 className error */}
                                                 <div className="text-sm space-y-2 leading-relaxed">
                                                     <ReactMarkdown
                                                         remarkPlugins={[remarkGfm]}
@@ -64,7 +66,6 @@ export default function Show({ auth, ticket, messages }) {
                                                             strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
                                                             ul: ({node, ...props}) => <ul className="list-disc list-inside my-2" {...props} />,
                                                             ol: ({node, ...props}) => <ol className="list-decimal list-inside my-2" {...props} />,
-                                                            // Updated code block detection for react-markdown v9
                                                             code: ({node, className, children, ...props}) => {
                                                                 const match = /language-(\w+)/.exec(className || '');
                                                                 const isBlock = match || String(children).includes('\n');
@@ -82,6 +83,21 @@ export default function Show({ auth, ticket, messages }) {
                                                         {message.body}
                                                     </ReactMarkdown>
                                                 </div>
+
+                                                {/* Render the attachment if it exists */}
+                                                {message.attachment && (
+                                                    <div className="mt-3 border-t border-gray-400/30 pt-2">
+                                                        {message.attachment.match(/\.(jpeg|jpg|gif|png)$/i) ? (
+                                                            <a href={`/storage/${message.attachment}`} target="_blank" rel="noreferrer">
+                                                                <img src={`/storage/${message.attachment}`} alt="attachment" className="max-w-[200px] rounded-md shadow-sm hover:opacity-90" />
+                                                            </a>
+                                                        ) : (
+                                                            <a href={`/storage/${message.attachment}`} target="_blank" rel="noreferrer" className="text-sm underline flex items-center gap-1 font-bold">
+                                                                📎 Download Attachment
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                )}
 
                                             </div>
                                         </div>
@@ -107,7 +123,15 @@ export default function Show({ auth, ticket, messages }) {
                                         This ticket has been closed by an administrator.
                                     </div>
                                 ) : (
-                                    <form onSubmit={submit} className="flex gap-2">
+                                    <form onSubmit={submit} className="flex gap-2 items-center">
+                                        {/* File Input for Attachments */}
+                                        <input
+                                            type="file"
+                                            onChange={(e) => setData('attachment', e.target.files[0])}
+                                            className="text-sm text-gray-500 file:mr-2 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 max-w-[220px]"
+                                            disabled={processing || isTyping}
+                                        />
+                                        
                                         <input
                                             type="text"
                                             value={data.body}
@@ -117,6 +141,7 @@ export default function Show({ auth, ticket, messages }) {
                                             disabled={processing || isTyping}
                                             autoComplete="off"
                                         />
+                                        
                                         <button
                                             type="submit"
                                             disabled={processing || isTyping || !data.body.trim()}
