@@ -6,7 +6,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Admin\TicketController as AdminTicketController;
-use Illuminate\Support\Facades\Artisan;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -47,10 +46,5 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('/tickets/{ticket}/close', [AdminTicketController::class, 'close'])->name('tickets.close');
     
 });
-
-    Route::get('/install-db', function () {
-        Artisan::call('migrate', ['--force' => true]);
-        return 'Database migrated successfully!';
-    });
 
 require __DIR__.'/auth.php';
