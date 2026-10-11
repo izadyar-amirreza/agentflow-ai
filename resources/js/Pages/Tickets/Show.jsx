@@ -51,8 +51,13 @@ export default function Show({ auth, ticket, messages }) {
         
         post(route('tickets.messages.store', ticket.id), {
             preserveScroll: true,
-            onStart: () => setIsTyping(true),
-            onSuccess: () => reset(),
+            onStart: () => setIsTyping(true), // Turn on the typing animation
+            onSuccess: () => reset(), // Reset/clear the form
+            onFinish: () => {
+                // This line is crucial! It turns off the loading state as soon as the server request finishes (whether successful or not).
+                // If the backend is actually processing AI, the Echo event will update the state again if needed. But at least the form is unlocked.
+                setIsTyping(false); 
+            },
         });
     };
 
