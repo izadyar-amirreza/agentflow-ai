@@ -62,8 +62,8 @@ class TicketController extends Controller
             'attachment' => $attachmentPath,
         ]);
 
-        // Dispatch the real-time event for admin message
-        event(new \App\Events\MessageSent($msg));
+        // Dispatch the real-time event for admin message to OTHERS
+        broadcast(new \App\Events\MessageSent($msg))->toOthers();
 
         return back();
     }
@@ -80,5 +80,4 @@ class TicketController extends Controller
 
         return back();
     }
-
 }

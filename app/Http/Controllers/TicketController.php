@@ -62,8 +62,8 @@ class TicketController extends Controller
             'attachment' => $attachmentPath,
         ]);
 
-        // Dispatch the real-time event for user message
-        event(new \App\Events\MessageSent($msg));
+        // Dispatch the real-time event for user message to OTHERS (prevents UI lock)
+        broadcast(new \App\Events\MessageSent($msg))->toOthers();
 
         // 2. Check for Human Takeover
         $adminHasReplied = $ticket->messages()->whereHas('user', function ($query) {
@@ -105,8 +105,8 @@ class TicketController extends Controller
                 'role' => 'assistant',
             ]);
 
-            // Dispatch the real-time event for AI message
-            event(new \App\Events\MessageSent($aiMsg));
+            // Dispatch the real-time event for AI message to EVERYONE
+            broadcast(new \App\Events\MessageSent($aiMsg));
         }
 
         return back();
