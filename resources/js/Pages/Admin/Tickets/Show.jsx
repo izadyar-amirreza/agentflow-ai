@@ -1,4 +1,4 @@
-import { useForm, Head, Link } from '@inertiajs/react';
+import { useForm, Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { useState, useEffect, useRef } from 'react'; 
 import ReactMarkdown from 'react-markdown';
@@ -11,8 +11,6 @@ export default function Show({ auth, ticket, messages }) {
     });
 
     const messagesEndRef = useRef(null);
-    
-    // Real-time state for messages
     const [localMessages, setLocalMessages] = useState(messages);
 
     // Sync local state if Inertia passes new props
@@ -20,24 +18,18 @@ export default function Show({ auth, ticket, messages }) {
         setLocalMessages(messages);
     }, [messages]);
 
-    // Real-time Echo Listener
+    // Polling via Inertia reload every 3 seconds (replaces WebSockets completely)
     useEffect(() => {
-        const channel = window.Echo.private(`ticket.${ticket.id}`);
-
-        channel.listen('MessageSent', (e) => {
-            setLocalMessages((prev) => {
-                // Prevent duplicate messages
-                if (prev.find((m) => m.id === e.message.id)) {
-                    return prev;
-                }
-                return [...prev, e.message];
+        const interval = setInterval(() => {
+            router.reload({
+                only: ['messages'],
+                preserveScroll: true,
+                preserveState: true,
             });
-        });
+        }, 3000);
 
-        return () => {
-            window.Echo.leave(`ticket.${ticket.id}`);
-        };
-    }, [ticket.id]);
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

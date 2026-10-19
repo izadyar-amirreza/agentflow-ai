@@ -1,4 +1,4 @@
-import { useForm, Head } from '@inertiajs/react';
+import { useForm, Head, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { useState, useEffect, useRef } from 'react'; 
 import ReactMarkdown from 'react-markdown';
@@ -19,28 +19,24 @@ export default function Show({ auth, ticket, messages }) {
     // Sync local state if Inertia passes new props
     useEffect(() => {
         setLocalMessages(messages);
+        // If new messages arrive from server (e.g. via polling), stop typing indicator
+        if (messages.length > localMessages.length) {
+            setIsTyping(false);
+        }
     }, [messages]);
 
-    // Real-time Echo Listener
+    // Automatic polling via Inertia reload every 3 seconds (replaces WebSockets completely)
     useEffect(() => {
-        const channel = window.Echo.private(`ticket.${ticket.id}`);
-
-        channel.listen('MessageSent', (e) => {
-            setLocalMessages((prev) => {
-                // Prevent duplicate messages
-                if (prev.find((m) => m.id === e.message.id)) {
-                    return prev;
-                }
-                return [...prev, e.message];
+        const interval = setInterval(() => {
+            router.reload({
+                only: ['messages'],
+                preserveScroll: true,
+                preserveState: true,
             });
-            // Stop typing indicator when a reply arrives
-            setIsTyping(false);
-        });
+        }, 3000);
 
-        return () => {
-            window.Echo.leave(`ticket.${ticket.id}`);
-        };
-    }, [ticket.id]);
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -52,11 +48,11 @@ export default function Show({ auth, ticket, messages }) {
         post(route('tickets.messages.store', ticket.id), {
             preserveScroll: true,
             onStart: () => setIsTyping(true), // Turn on the typing animation
-            onSuccess: () => reset(), // Reset/clear the form
+            onSuccess: () => {
+                reset(); // Reset/clear the form
+            },
             onFinish: () => {
-                // This line is crucial! It turns off the loading state as soon as the server request finishes (whether successful or not).
-                // If the backend is actually processing AI, the Echo event will update the state again if needed. But at least the form is unlocked.
-                setIsTyping(false); 
+                // Keep typing indicator on if waiting for AI response, will be cleared when new messages arrive
             },
         });
     };
@@ -129,10 +125,10 @@ export default function Show({ auth, ticket, messages }) {
                             
                             {isTyping && (
                                 <div className="flex justify-start mb-4 px-6">
-                                    <div className="bg-gray-700 text-gray-200 rounded-lg px-4 py-3 shadow-sm flex items-center gap-1">
-                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
+                                    <div className="bg-gray-200 text-gray-700 rounded-lg px-4 py-3 shadow-sm flex items-center gap-1">
+                                        <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                        <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                        <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></span>
                                     </div>
                                 </div>
                             )}
@@ -148,7 +144,7 @@ export default function Show({ auth, ticket, messages }) {
                                             type="file"
                                             onChange={(e) => setData('attachment', e.target.files[0])}
                                             className="text-sm text-gray-500 file:mr-2 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 max-w-[220px]"
-                                            disabled={processing || isTyping}
+                                            disabled={processing}
                                         />
                                         
                                         <input
@@ -157,13 +153,13 @@ export default function Show({ auth, ticket, messages }) {
                                             onChange={(e) => setData('body', e.target.value)}
                                             placeholder={isTyping ? "AI is thinking..." : "Type your message..."}
                                             className="flex-1 border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                                            disabled={processing || isTyping}
+                                            disabled={processing}
                                             autoComplete="off"
                                         />
                                         
                                         <button
                                             type="submit"
-                                            disabled={processing || isTyping || !data.body.trim()}
+                                            disabled={processing || !data.body.trim()}
                                             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                         >
                                             {isTyping ? 'Thinking...' : 'Send'}
