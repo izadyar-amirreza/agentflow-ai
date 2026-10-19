@@ -30,6 +30,7 @@ RUN npm install && npm run build
 
 # Copy custom configuration files
 COPY docker/nginx.conf /etc/nginx/sites-available/default
+COPY docker/nginx.conf /etc/nginx/sites-enabled/default
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Set directory permissions for security
@@ -38,5 +39,5 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 # Expose port 80
 EXPOSE 80
 
-# Start the server using Supervisor
-CMD sh -c "php artisan migrate --force && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"
+# Clear cached configs, run migrations, and start Supervisor
+CMD sh -c "php artisan config:clear && php artisan migrate --force && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"
