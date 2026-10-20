@@ -36,8 +36,12 @@ COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 # Set directory permissions for security
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
+# Increase PHP file upload limit to 20MB
+RUN echo "upload_max_filesize = 20M" > /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size = 25M" >> /usr/local/etc/php/conf.d/uploads.ini
+
 # Expose port 80
 EXPOSE 80
 
-# Clear cached configs, run migrations, and start Supervisor
-CMD sh -c "php artisan config:clear && php artisan migrate --force && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"
+# Create storage symlink, run migrations, and start Supervisor
+CMD sh -c "php artisan config:clear && php artisan storage:link --force && php artisan migrate --force && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"

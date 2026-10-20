@@ -40,7 +40,7 @@ export default function Show({ auth, ticket, messages }) {
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [localMessages]); // Scroll on new local message
+    }, [localMessages.length]); // Scroll on new local message
 
     const submit = (e) => {
         e.preventDefault();

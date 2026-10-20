@@ -33,7 +33,7 @@ export default function Show({ auth, ticket, messages }) {
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [localMessages]);
+    }, [localMessages.length]);
 
     const closeTicket = () => {
         if (confirm('Are you sure you want to close this ticket?')) {
