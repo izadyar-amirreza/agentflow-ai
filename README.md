@@ -44,7 +44,7 @@ To run this project locally on your machine, follow these steps:
 
 ```bash
 # 1. Clone the repository
-git clone [https://github.com/YOUR_GITHUB_USERNAME/agentflow-ai.git](https://github.com/YOUR_GITHUB_USERNAME/agentflow-ai.git)
+git clone https://github.com/izadyar-amirreza/agentflow-ai.git
 cd agentflow-ai
 
 # 2. Install PHP & JavaScript dependencies
@@ -66,3 +66,4 @@ php artisan storage:link
 # 6. Start the development servers
 php artisan serve
 npm run dev
+```
