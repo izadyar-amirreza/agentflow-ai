@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('messages', function (Blueprint $table) {
-            // Add a file column (nullable, since it is not mandatory)
-            $table->string('attachment')->nullable()->after('body');
+            // Use longText to securely store Base64 image strings
+            $table->longText('attachment')->nullable()->after('body');
         });
     }
 

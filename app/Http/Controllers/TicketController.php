@@ -16,7 +16,7 @@ class TicketController extends Controller
         ]);
     }
 
-    // ADDED: Method to handle the creation of a new ticket from the UI form
+    // Method to handle the creation of a new ticket from the UI form
     public function store(Request $request)
     {
         // Validate the ticket subject
@@ -51,7 +51,16 @@ class TicketController extends Controller
 
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
-            $attachmentPath = $request->file('attachment')->store('attachments', 'public');
+            $file = $request->file('attachment');
+            $mime = $file->getMimeType();
+
+            // Convert images to Base64 so they persist permanently in the database on Render
+            if (str_starts_with($mime, 'image/')) {
+                $base64 = base64_encode(file_get_contents($file->getRealPath()));
+                $attachmentPath = "data:{$mime};base64,{$base64}";
+            } else {
+                $attachmentPath = $file->store('attachments', 'public');
+            }
         }
 
         // 1. Save the message and store it in $msg variable
@@ -63,7 +72,11 @@ class TicketController extends Controller
         ]);
 
         // Dispatch the real-time event for user message to OTHERS (prevents UI lock)
-        broadcast(new \App\Events\MessageSent($msg))->toOthers();
+        try {
+            broadcast(new \App\Events\MessageSent($msg))->toOthers();
+        } catch (\Throwable $e) {
+            \Log::warning('Broadcast failed: ' . $e->getMessage());
+        }
 
         // 2. Check for Human Takeover
         $adminHasReplied = $ticket->messages()->whereHas('user', function ($query) {
@@ -88,7 +101,7 @@ class TicketController extends Controller
         ]);
 
         // 4. Send the request to the Groq API
-        $response = \Illuminate\Support\Facades\Http::withToken(env('GROQ_API_KEY'))
+        $response = Http::withToken(env('GROQ_API_KEY'))
             ->post('https://api.groq.com/openai/v1/chat/completions', [
                 'model' => env('GROQ_MODEL', 'qwen/qwen3.8-27b'), 
                 'messages' => $conversation,
@@ -106,7 +119,11 @@ class TicketController extends Controller
             ]);
 
             // Dispatch the real-time event for AI message to EVERYONE
-            broadcast(new \App\Events\MessageSent($aiMsg));
+            try {
+                broadcast(new \App\Events\MessageSent($aiMsg));
+            } catch (\Throwable $e) {
+                \Log::warning('AI Broadcast failed: ' . $e->getMessage());
+            }
         }
 
         return back();
