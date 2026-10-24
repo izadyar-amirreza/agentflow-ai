@@ -7,13 +7,9 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Admin\TicketController as AdminTicketController;
 
+// Redirect root to login page
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return redirect()->route('login');
 });
 
 Route::get('/dashboard', function () {
@@ -39,10 +35,11 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // Path to list all tickets for the administrator
     Route::get('/tickets', [AdminTicketController::class, 'index'])->name('tickets.index');
     
-    // Added: Admin paths for accessing tickets and sending blocking messages
+    // Admin paths for accessing tickets and sending messages
     Route::get('/tickets/{ticket}', [AdminTicketController::class, 'show'])->name('tickets.show');
     Route::post('/tickets/{ticket}/messages', [AdminTicketController::class, 'storeMessage'])->name('tickets.messages.store');
-    // New route for closing a ticket by the admin
+    
+    // Route for closing a ticket by the admin
     Route::post('/tickets/{ticket}/close', [AdminTicketController::class, 'close'])->name('tickets.close');
     
 });
